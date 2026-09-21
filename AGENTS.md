@@ -1,5 +1,22 @@
 # SEQTRAK Controller
 
+## Current repository state (2026-09-21)
+
+The counter template has been replaced by a runnable MIDI Explorer foundation.
+The app currently uses `MockMidiTransport`; physical MIDI support and Riverpod
+have not yet been wired in. Existing implementation includes transport/domain
+models, raw RX/TX monitoring, generic MIDI decoding, validated hex transmission,
+a capture writer, responsive UI, and unit/widget tests.
+
+Until `FlutterMidiTransport` is implemented, use the mock UI with:
+
+```bash
+flutter run -d macos
+```
+
+No SEQTRAK-specific mapping is verified yet. Do not interpret example MIDI bytes
+in the UI or tests as Yamaha protocol documentation.
+
 ## Project purpose
 
 This project is a cross-platform control surface and editor for the Yamaha SEQTRAK.
