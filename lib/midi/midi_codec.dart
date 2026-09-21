@@ -24,6 +24,8 @@ class MidiCodec {
     if (bytes.isEmpty) return 'Empty message';
     final status = bytes.first;
     if (status == 0xf0) return 'System Exclusive (${bytes.length} bytes)';
+    if (status == 0xf8 && bytes.length == 1) return 'Timing Clock';
+    if (status == 0xfe && bytes.length == 1) return 'Active Sensing';
     if (status < 0x80) return 'Data bytes';
 
     final channel = (status & 0x0f) + 1;

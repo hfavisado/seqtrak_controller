@@ -12,14 +12,18 @@ The repository contains the first runnable MIDI Explorer foundation:
 - a `MockMidiTransport` for development and automated tests
 - MIDI device connection state
 - raw RX/TX traffic display with timestamps
+- timing-clock (`F8`) and active-sensing (`FE`) messages hidden from the monitor
+  by default, but retained in recordings
 - generic MIDI message descriptions that retain the raw bytes
+- centralized Yamaha-documented channel and CC definitions with pure-Dart
+  encoding and decoding
 - validated hexadecimal message entry and sending
 - a human-readable MIDI capture writer
 - responsive narrow and desktop layouts
 
-The app currently starts with the mock transport. It does **not** connect to
-physical MIDI hardware yet, and no undocumented SEQTRAK mapping is treated as
-known.
+The app now starts with `FlutterMidiTransport` and supports native USB MIDI.
+Direct BLE is deliberately disabled until USB MIDI is verified. No undocumented
+SEQTRAK mapping is treated as known.
 
 ## Run the project
 
@@ -38,8 +42,9 @@ flutter analyze
 flutter test
 ```
 
-To exercise the mock explorer, connect to **Mock SEQTRAK**, enter complete MIDI
-bytes such as `90 3C 64`, and press **Send**. Sent traffic appears in the monitor.
+Connect a MIDI device, enter complete MIDI bytes such as `90 3C 64`, and press
+**Send**. Sent traffic appears in the monitor. Recordings can be annotated and
+exported through the desktop save dialog.
 
 ## Architecture
 
@@ -57,11 +62,10 @@ See [Architecture](docs/architecture.md),
 
 ## Near-term roadmap
 
-1. Add Riverpod and move controller ownership into providers.
-2. Implement `FlutterMidiTransport` behind the existing interface.
-3. Test device enumeration, connect/disconnect, RX, and TX on macOS.
-4. Add start/stop recording and desktop/mobile capture export UI.
-5. Record one-control-at-a-time experiments and only then add verified SEQTRAK
+1. Test device enumeration, connect/disconnect, RX, and TX on macOS hardware.
+2. Confirm exported capture timing and message boundaries against the device.
+3. Add mobile capture sharing/export before mobile platform validation.
+4. Record one-control-at-a-time experiments and only then add verified SEQTRAK
    mappings, tests, repository state, and the first bidirectional control.
 
 Web remains optional; native MIDI reliability takes priority.

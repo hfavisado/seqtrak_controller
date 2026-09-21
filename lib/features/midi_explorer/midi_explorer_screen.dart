@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../midi/midi_device.dart';
 import '../../midi/midi_packet.dart';
-import '../../midi/midi_transport.dart';
 import 'midi_explorer_controller.dart';
 
-class MidiExplorerScreen extends StatefulWidget {
-  const MidiExplorerScreen({required this.transport, super.key});
-
-  final MidiTransport transport;
+class MidiExplorerScreen extends ConsumerStatefulWidget {
+  const MidiExplorerScreen({super.key});
 
   @override
-  State<MidiExplorerScreen> createState() => _MidiExplorerScreenState();
+  ConsumerState<MidiExplorerScreen> createState() => _MidiExplorerScreenState();
 }
 
-class _MidiExplorerScreenState extends State<MidiExplorerScreen> {
+class _MidiExplorerScreenState extends ConsumerState<MidiExplorerScreen> {
   late final MidiExplorerController _controller;
   final _messageController = TextEditingController(text: 'B0 4A 64');
+  final _notesController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _controller = MidiExplorerController(transport: widget.transport)
+    _controller = ref.read(midiExplorerControllerProvider)
       ..addListener(_onChanged);
     _controller.start();
   }
@@ -32,10 +32,9 @@ class _MidiExplorerScreenState extends State<MidiExplorerScreen> {
 
   @override
   void dispose() {
-    _controller
-      ..removeListener(_onChanged)
-      ..dispose();
+    _controller.removeListener(_onChanged);
     _messageController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -47,12 +46,21 @@ class _MidiExplorerScreenState extends State<MidiExplorerScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final devicePanel = _DevicePanel(controller: _controller);
+            final recordingPanel = _RecordingPanel(
+              controller: _controller,
+              notesController: _notesController,
+            );
             final monitor = _Monitor(controller: _controller);
             if (constraints.maxWidth >= 800) {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(width: 320, child: devicePanel),
+                  SizedBox(
+                    width: 320,
+                    child: SingleChildScrollView(
+                      child: Column(children: [devicePanel, recordingPanel]),
+                    ),
+                  ),
                   const VerticalDivider(width: 1),
                   Expanded(child: monitor),
                 ],
@@ -61,6 +69,7 @@ class _MidiExplorerScreenState extends State<MidiExplorerScreen> {
             return Column(
               children: [
                 devicePanel,
+                recordingPanel,
                 const Divider(height: 1),
                 Expanded(child: monitor),
               ],
@@ -92,6 +101,14 @@ class _DevicePanel extends StatelessWidget {
         children: [
           Text('MIDI devices', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              tooltip: 'Refresh devices',
+              onPressed: controller.isBusy ? null : controller.refreshDevices,
+              icon: const Icon(Icons.refresh),
+            ),
+          ),
           if (controller.devices.isEmpty)
             const Text('No MIDI devices found')
           else
@@ -110,6 +127,77 @@ class _DevicePanel extends StatelessWidget {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RecordingPanel extends StatelessWidget {
+  const _RecordingPanel({
+    required this.controller,
+    required this.notesController,
+  });
+
+  final MidiExplorerController controller;
+  final TextEditingController notesController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Capture', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          TextField(
+            controller: notesController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Experiment notes',
+            ),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: controller.isRecording
+                    ? controller.stopRecording
+                    : controller.startRecording,
+                icon: Icon(
+                  controller.isRecording
+                      ? Icons.stop
+                      : Icons.fiber_manual_record,
+                ),
+                label: Text(controller.isRecording ? 'Stop' : 'Record'),
+              ),
+              OutlinedButton.icon(
+                onPressed:
+                    controller.recordedPacketCount == 0 || controller.isBusy
+                    ? null
+                    : () =>
+                          controller.exportCapture(notes: notesController.text),
+                icon: const Icon(Icons.save_alt),
+                label: const Text('Export'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            controller.isRecording
+                ? 'Recording ${controller.recordedPacketCount} messages'
+                : '${controller.recordedPacketCount} recorded messages',
+          ),
+          if (controller.lastExportPath case final path?)
+            Text(
+              'Saved to $path',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
         ],
       ),
     );
@@ -153,6 +241,7 @@ class _Monitor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visiblePackets = controller.visiblePackets;
     return Column(
       children: [
         Padding(
@@ -165,6 +254,13 @@ class _Monitor extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
+              FilterChip(
+                selected: controller.showRealtimeNoise,
+                onSelected: controller.setShowRealtimeNoise,
+                label: const Text('Show clock/sensing'),
+                tooltip: 'Show F8 Timing Clock and FE Active Sensing messages',
+              ),
+              const SizedBox(width: 8),
               TextButton.icon(
                 onPressed: controller.packets.isEmpty
                     ? null
@@ -176,13 +272,20 @@ class _Monitor extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: controller.packets.isEmpty
-              ? const Center(child: Text('MIDI traffic will appear here'))
+          child: visiblePackets.isEmpty
+              ? Center(
+                  child: Text(
+                    controller.packets.isEmpty
+                        ? 'MIDI traffic will appear here'
+                        : 'Only hidden clock or active-sensing messages received',
+                  ),
+                )
               : ListView.builder(
                   reverse: true,
-                  itemCount: controller.packets.length,
+                  itemCount: visiblePackets.length,
                   itemBuilder: (context, index) {
-                    final packet = controller.packets.reversed.elementAt(index);
+                    final packet =
+                        visiblePackets[visiblePackets.length - index - 1];
                     return _PacketTile(packet: packet, controller: controller);
                   },
                 ),

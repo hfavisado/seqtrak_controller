@@ -8,6 +8,7 @@ void main() {
     final devicesFuture = transport.devices.first;
 
     await transport.start();
+    await transport.refreshDevices();
     final devices = await devicesFuture;
     await transport.connect(devices.single);
     await transport.send([0x90, 0x3c, 0x64]);

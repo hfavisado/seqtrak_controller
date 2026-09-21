@@ -40,7 +40,8 @@ class MockMidiTransport implements MidiTransport {
     _publishDevices();
   }
 
-  void refreshDevices() {
+  @override
+  Future<void> refreshDevices() async {
     _ensureStarted();
     _publishDevices();
   }

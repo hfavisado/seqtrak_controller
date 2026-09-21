@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../features/midi_explorer/midi_explorer_screen.dart';
-import '../midi/mock_midi_transport.dart';
 
 class SeqtrakControllerApp extends StatelessWidget {
   const SeqtrakControllerApp({super.key});
@@ -18,7 +17,7 @@ class SeqtrakControllerApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: MidiExplorerScreen(transport: MockMidiTransport()),
+      home: const MidiExplorerScreen(),
     );
   }
 }

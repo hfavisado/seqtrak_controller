@@ -3,19 +3,30 @@
 ## Current repository state (2026-09-21)
 
 The counter template has been replaced by a runnable MIDI Explorer foundation.
-The app currently uses `MockMidiTransport`; physical MIDI support and Riverpod
-have not yet been wired in. Existing implementation includes transport/domain
-models, raw RX/TX monitoring, generic MIDI decoding, validated hex transmission,
-a capture writer, responsive UI, and unit/widget tests.
+The application uses Riverpod for dependency ownership and
+`FlutterMidiTransport` for native USB MIDI. Existing implementation includes
+transport/domain models, raw RX/TX monitoring, generic MIDI decoding, validated
+hex transmission, recording with desktop file export, responsive UI, and tests.
+`MockMidiTransport` remains available for tests and UI development.
 
-Until `FlutterMidiTransport` is implemented, use the mock UI with:
+Run the native application with:
 
 ```bash
 flutter run -d macos
 ```
 
-No SEQTRAK-specific mapping is verified yet. Do not interpret example MIDI bytes
-in the UI or tests as Yamaha protocol documentation.
+The 11 MIDI channel assignments and 40 CC mappings from sections 18.2–18.3 of
+Yamaha's OS V2.00 User Guide are centralized under `lib/seqtrak/` with status
+`documented`. None is hardware-`verified` yet. Do not interpret arbitrary example
+MIDI bytes in the UI or tests as additional Yamaha protocol documentation.
+
+Direct BLE is not configured. USB/native MIDI must be verified before adding the
+optional `flutter_midi_command_ble` package. Desktop capture export uses
+`file_selector`; mobile sharing/export still needs a platform-appropriate flow.
+
+macOS builds require Xcode and its command-line components. On a new machine,
+install Xcode, launch it once to accept its license/install components, then run
+`flutter doctor` before `flutter build macos`.
 
 ## Project purpose
 
@@ -548,6 +559,16 @@ Status values:
 * unknown
 
 When adding a discovered protocol mapping, update documentation and tests in the same change.
+
+## Protocol portability
+
+The SEQTRAK protocol must not depend on Flutter, Riverpod, or any UI framework. Protocol discoveries should be documented independently of the Dart implementation.
+
+Parameter definitions should eventually be representable in a machine-readable platform-neutral format so implementations can be generated for Dart and embedded C/C++.
+
+ESP32-class embedded controllers using LVGL are a potential target. Do not make architectural decisions that unnecessarily prevent a separate embedded implementation.
+
+Sharing protocol definitions and behavior is more important than sharing UI code.
 
 ## Research log
 

@@ -6,6 +6,7 @@ abstract interface class MidiTransport {
   Stream<List<MidiDevice>> get devices;
 
   Future<void> start();
+  Future<void> refreshDevices();
   Future<void> connect(MidiDevice device);
   Future<void> disconnect();
   Future<void> send(List<int> bytes);

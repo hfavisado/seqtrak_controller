@@ -21,16 +21,18 @@ retained even when a message can be decoded.
   generic codec, and capture serialization
 - `lib/features/midi_explorer/`: feature controller and responsive screen
 - `lib/app/`: application root and theme
+- `lib/seqtrak/`: Yamaha-documented parameter definitions and pure-Dart protocol
+  encoding/decoding
 
-The current feature controller uses Flutter's `ChangeNotifier` as a temporary,
-dependency-free state boundary. Riverpod remains the selected application state
-tool and should own controller/repository lifetimes once it is added.
+The feature controller uses Flutter's `ChangeNotifier` for granular UI updates,
+while Riverpod creates and owns the controller, transport, and export service.
 
 ## Next boundary work
 
-`FlutterMidiTransport` should be the only source file importing
-`flutter_midi_command`. Plugin device objects and event shapes must be converted
-to project-owned `MidiDevice` and `MidiPacket` values there.
+`FlutterMidiTransport` is the only source file importing
+`flutter_midi_command`. It converts plugin device objects and raw packet events
+to project-owned `MidiDevice` and `MidiPacket` values. Native USB MIDI is enabled;
+the optional direct BLE transport is not yet configured.
 
 SEQTRAK-specific decoding belongs in `lib/seqtrak/`, not in `MidiCodec`.
 `MidiCodec` only describes standard MIDI message structure.

@@ -19,4 +19,12 @@ void main() {
   test('describes standard CC without assigning SEQTRAK meaning', () {
     expect(codec.describe([0xb0, 0x4a, 0x64]), 'CC ch1 74 = 100');
   });
+
+  test('describes a one-byte timing clock message', () {
+    expect(codec.describe([0xf8]), 'Timing Clock');
+  });
+
+  test('describes a one-byte active sensing message', () {
+    expect(codec.describe([0xfe]), 'Active Sensing');
+  });
 }
