@@ -7,6 +7,48 @@ import 'package:seqtrak_controller/app/providers.dart';
 import 'package:seqtrak_controller/midi/mock_midi_transport.dart';
 
 void main() {
+  testWidgets('ring overview fits a narrow phone', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          midiTransportProvider.overrideWithValue(MockMidiTransport()),
+        ],
+        child: const SeqtrakControllerApp(),
+      ),
+    );
+    await tester.pump();
+    expect(find.byKey(const ValueKey('track-rings')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('renames a track and changes its ring color', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          midiTransportProvider.overrideWithValue(MockMidiTransport()),
+        ],
+        child: const SeqtrakControllerApp(),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('name-kick')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Bass drum');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bass drum'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('color-kick')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('palette-1')));
+    await tester.pumpAndSettle();
+    final colorButton = tester.widget<IconButton>(
+      find.byKey(const ValueKey('color-kick')),
+    );
+    expect((colorButton.icon as Icon).color, Colors.pink.shade300);
+  });
+
   testWidgets('shows track positions and opens MIDI Explorer', (tester) async {
     final transport = MockMidiTransport();
     await tester.pumpWidget(
@@ -20,6 +62,7 @@ void main() {
     expect(find.text('KICK'), findsOneWidget);
     expect(find.text('SNARE'), findsOneWidget);
     expect(find.text('Pattern unknown'), findsWidgets);
+    expect(find.byKey(const ValueKey('track-rings')), findsOneWidget);
     final stepCenter = tester.getCenter(
       find.byKey(const ValueKey('position-kick-STEP')),
     );
@@ -61,6 +104,14 @@ void main() {
     ]);
     transport.injectIncoming([0xfa]);
     await tester.pumpAndSettle();
+    final rings = find.byKey(const ValueKey('track-rings'));
+    final topLeft = tester.getTopLeft(rings);
+    final width = tester.getSize(rings).width;
+    await tester.tapAt(topLeft + Offset(width / 2, 9));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(transport.sentMessages, contains(equals([0x90, 60, 100])));
+    expect(transport.sentMessages, contains(equals([0x80, 60, 0])));
+    expect(find.text('KICK · step 1'), findsOneWidget);
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('position-kick-BAR'))).data,
       '01',

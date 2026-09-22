@@ -14,6 +14,16 @@ Status values:
 
 ## Song position and bar / beat / step
 
+The ring display also offers local step audition. Yamaha's Data List, MIDI Data
+Format §3-1-1 and §3-1-2, documents incoming Note On (`9n note velocity`) and
+Note Off (`8n note 0`) on channels 1–11. Tapping a step sends a short Note On /
+Note Off pair on that track's channel, using its locally selected MIDI note,
+velocity, and gate duration. The default note 60 is a generic audition choice,
+not a verified sound or sample mapping. This does not read, toggle, or write
+SEQTRAK pattern step contents; that protocol remains to be researched. In
+particular, synth, DX, sampler, and DrumKit steps may need multiple notes and
+additional per-step sound or effect parameters.
+
 Yamaha's [SEQTRAK Data List](https://usa.yamaha.com/files/download/other_assets/5/2226075/SEQTRAK_data_list_En_D0.pdf),
 MIDI Data Format and MIDI Implementation Chart (pages 111 and 162), specifies
 outgoing Timing Clock (`F8`) when Clock Out is enabled and the internal clock

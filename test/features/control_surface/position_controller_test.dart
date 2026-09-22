@@ -14,6 +14,45 @@ class _NoopExporter implements MidiCaptureExporter {
 }
 
 void main() {
+  test('rapid auditions end the prior note before the next one', () async {
+    final transport = MockMidiTransport();
+    final explorer = MidiExplorerController(
+      transport: transport,
+      exporter: _NoopExporter(),
+    );
+    final controller = PositionController(
+      transport: transport,
+      explorer: explorer,
+    );
+    addTearDown(() {
+      controller.dispose();
+      explorer.dispose();
+    });
+    await explorer.start();
+    await explorer.connect(explorer.devices.single);
+    await Future<void>.delayed(Duration.zero);
+    final first = controller.audition(
+      SeqtrakTrack.synth1,
+      note: 60,
+      velocity: 90,
+      gateMs: 30,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 1));
+    final second = controller.audition(
+      SeqtrakTrack.synth1,
+      note: 64,
+      velocity: 80,
+      gateMs: 30,
+    );
+    await Future.wait([first, second]);
+    expect(transport.sentMessages.sublist(11), [
+      [0x97, 60, 90],
+      [0x87, 60, 0],
+      [0x97, 64, 80],
+      [0x87, 64, 0],
+    ]);
+  });
+
   test('requests each selection and follows per-track lengths', () async {
     final transport = MockMidiTransport();
     final explorer = MidiExplorerController(

@@ -34,7 +34,18 @@ This project is a touch-capable display and focused control surface for the Yama
 SEQTRAK. It should make frequently used tasks that are awkward on the hardware
 quick to see and operate. It is not intended to reproduce every device function.
 
-The main screen shows separate bar / beat / step readouts for all 11 tracks.
+The main screen shows 11 concentric pattern rings with separate bar / beat /
+step readouts for all 11 tracks. Each ring's circumference represents its
+active pattern length, and its colored marker points to the estimated current
+step. Track names and colors are editable local display settings; they do not
+change MIDI routing or the device's sound selection. Yamaha OS V2.00 allows
+the seven Drum tracks to switch among Drum, DrumKit, and Synth types, but does
+not document arbitrary instrument types on all 11 tracks.
+The smaller dots on each ring are tappable audition steps. They send a short
+MIDI note on/off using locally editable note, velocity, and gate values. This
+does not read or write the device's step sequence; those mappings remain
+unknown, and later track-specific step parameters must not be reduced to a
+single on/off flag.
 Each track can use a different active pattern and step length. The current
 implementation requests documented pattern state on connection and combines
 it with MIDI Start and Clock to estimate each position. Unknown track state
