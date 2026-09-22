@@ -51,6 +51,19 @@ class MidiExplorerController extends ChangeNotifier {
   int get recordedPacketCount => _capturePackets.length;
   String? get lastExportPath => _lastExportPath;
 
+  String formatVisibleTraffic() => visiblePackets.map(formatPacket).join('\n');
+
+  String formatPacket(MidiPacket packet) {
+    final time = packet.timestamp;
+    final timestamp =
+        '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}:'
+        '${time.second.toString().padLeft(2, '0')}.'
+        '${time.millisecond.toString().padLeft(3, '0')}';
+    return '$timestamp ${packet.direction.name.toUpperCase()} '
+        '${codec.formatHex(packet.bytes)}  ${codec.describe(packet.bytes)}';
+  }
+
   Future<void> start() async {
     if (_isStarted) return;
     _isStarted = true;
@@ -86,16 +99,21 @@ class MidiExplorerController extends ChangeNotifier {
   Future<void> sendHex(String input) async {
     await _run(() async {
       final bytes = codec.parseHex(input);
-      await transport.send(bytes);
-      _addPacket(
-        MidiPacket(
-          timestamp: DateTime.now(),
-          direction: MidiDirection.tx,
-          bytes: bytes,
-          deviceId: _connectedDevice?.id,
-        ),
-      );
+      await sendProtocolBytes(bytes);
     });
+  }
+
+  Future<void> sendProtocolBytes(List<int> bytes) async {
+    await transport.send(bytes);
+    _addPacket(
+      MidiPacket(
+        timestamp: DateTime.now(),
+        direction: MidiDirection.tx,
+        bytes: bytes,
+        deviceId: _connectedDevice?.id,
+      ),
+    );
+    notifyListeners();
   }
 
   void startRecording() {

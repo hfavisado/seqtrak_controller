@@ -25,6 +25,12 @@ class MidiCodec {
     final status = bytes.first;
     if (status == 0xf0) return 'System Exclusive (${bytes.length} bytes)';
     if (status == 0xf8 && bytes.length == 1) return 'Timing Clock';
+    if (status == 0xfa && bytes.length == 1) return 'Start';
+    if (status == 0xfb && bytes.length == 1) return 'Continue';
+    if (status == 0xfc && bytes.length == 1) return 'Stop';
+    if (status == 0xf2 && bytes.length == 3) {
+      return 'Song Position Pointer = ${(bytes[2] << 7) | bytes[1]}';
+    }
     if (status == 0xfe && bytes.length == 1) return 'Active Sensing';
     if (status < 0x80) return 'Data bytes';
 

@@ -12,6 +12,52 @@ Status values:
 - `suspected`: inferred from observations
 - `unknown`: no reliable mapping yet
 
+## Song position and bar / beat / step
+
+Yamaha's [SEQTRAK Data List](https://usa.yamaha.com/files/download/other_assets/5/2226075/SEQTRAK_data_list_En_D0.pdf),
+MIDI Data Format and MIDI Implementation Chart (pages 111 and 162), specifies
+outgoing Timing Clock (`F8`) when Clock Out is enabled and the internal clock
+is in use. Outgoing sequencer control includes Start (`FA`) and Stop (`FC`) when
+enabled. The chart marks Song Position Pointer (`F2`) unsupported for both
+transmit and receive; the transmit flow does not list Continue (`FB`). No
+documented message reports the currently playing bar or a loop boundary.
+
+Clock alone cannot identify the current bar within a repeating pattern: it
+provides timing but no pattern length or loop reset. Project Track General
+parameters provide selected pattern and step lengths independently for each
+track. The control surface uses these to calculate a provisional position for
+each track after MIDI Start. Pattern-switch phase and song/scene behavior still
+need hardware validation.
+
+The Data List's Project Track General table documents `30 5p 16`/`17` as
+Pattern 1 step count (two 7-bit data bytes, 1–128 steps), with further pairs
+at `18`–`21` for Patterns 2–6. Part `p=7` is SYNTH 1. User-supplied captures
+after setting bar length to 1 and 2 include `30 57 16 00 10` (16 steps) and
+`30 57 16 00 20` (32 steps), respectively. These agree with Yamaha's SYNTH 1
+Pattern 1 mapping. They report that pattern's length, not the current playhead
+bar or a loop boundary. The undocumented `01 10 2E` messages also differ
+(`01` versus `0D`), but their meaning remains unknown. See the
+[research log](midi-research-log.md) for both captures.
+
+For each part `p=0...10`, `30 5p 0F` selects Pattern 1–6 (data `00...05`).
+Offsets `16`, `18`, `1A`, `1C`, `1E`, and `20` hold the corresponding pattern's
+step count as two 7-bit bytes. On connection the app requests each selected
+pattern, then requests that pattern's step count. Incoming parameter changes
+update the stored state. An RX Start (`FA`) anchors the shared clock at step
+zero; six Timing Clock (`F8`) ticks advance one step. Each track's step index
+wraps at its own selected pattern length, and its bar/beat/step are calculated
+from that index using 16 steps per bar and four steps per beat. Without a known
+selected pattern, step count, or Start, that track displays `--`. This is an
+estimate based on documented values and must be compared with hardware,
+especially across pattern switches and song/scene playback.
+
+| Function | Message/source | Direction | Status |
+| --- | --- | --- | --- |
+| Beat / step timing | Start and Clock, when outgoing settings enable them | From SEQTRAK | documented, not hardware verified |
+| Selected pattern per track | `30 5p 0F`, values `00`–`05` | From SEQTRAK | documented, not hardware verified |
+| Pattern length per track | `30 5p 16`–`20`, 1–128 steps | From SEQTRAK | documented; SYNTH 1 Pattern 1 observed at 16 and 32 steps |
+| Current bar in active pattern | Calculated from Start, Clock, selection, and step count | Application estimate | provisional |
+
 ## MIDI channels
 
 | Channel | Track | Status |

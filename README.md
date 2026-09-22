@@ -1,8 +1,9 @@
 # SEQTRAK Controller
 
-A cross-platform Flutter control surface and MIDI research tool for the Yamaha
-SEQTRAK. Development currently focuses on the MIDI Explorer needed to observe,
-record, and test the device protocol before building the full control surface.
+A cross-platform, touch-capable display and focused control surface for the
+Yamaha SEQTRAK. It prioritizes frequently used features that are cumbersome
+on the device. The central bar / beat / step display is a core part of the
+interface. MIDI Explorer remains available for protocol research.
 
 ## Current status
 
@@ -21,7 +22,13 @@ The repository contains the first runnable MIDI Explorer foundation:
 - a human-readable MIDI capture writer
 - responsive narrow and desktop layouts
 
-The app now starts with `FlutterMidiTransport` and supports native USB MIDI.
+The app now starts on an 11-track position view. Connect to SEQTRAK in MIDI
+Explorer using the cable icon. The app requests each track's selected pattern
+and step count, then combines that state with MIDI Start and Clock to estimate
+its own looping bar / beat / step. Unknown pattern state stays blank. The step
+always uses two digits and the readouts use a monospace font. Pattern-switch
+alignment and song/scene behavior still need hardware verification.
+`FlutterMidiTransport` supports native USB MIDI.
 Direct BLE is deliberately disabled until USB MIDI is verified. No undocumented
 SEQTRAK mapping is treated as known.
 
@@ -44,7 +51,10 @@ flutter test
 
 Connect a MIDI device, enter complete MIDI bytes such as `90 3C 64`, and press
 **Send**. Sent traffic appears in the monitor. Recordings can be annotated and
-exported through the desktop save dialog.
+exported through the desktop save dialog. In MIDI Explorer, select traffic text
+directly or press **Copy traffic** to copy the entire visible log for sharing.
+Enable **Show clock/sensing** first if the timing messages are relevant to the
+capture you want to paste.
 
 ## Architecture
 
@@ -63,9 +73,9 @@ See [Architecture](docs/architecture.md),
 ## Near-term roadmap
 
 1. Test device enumeration, connect/disconnect, RX, and TX on macOS hardware.
-2. Confirm exported capture timing and message boundaries against the device.
-3. Add mobile capture sharing/export before mobile platform validation.
-4. Record one-control-at-a-time experiments and only then add verified SEQTRAK
-   mappings, tests, repository state, and the first bidirectional control.
+2. Determine whether MIDI supplies reliable bar / beat / step position, and
+   document the origin, reset behavior, and time-signature assumptions.
+3. Identify the few frequent tasks that are difficult on the hardware.
+4. Verify their MIDI behavior and add one useful bidirectional control.
 
 Web remains optional; native MIDI reliability takes priority.

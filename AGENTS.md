@@ -30,7 +30,23 @@ install Xcode, launch it once to accept its license/install components, then run
 
 ## Project purpose
 
-This project is a cross-platform control surface and editor for the Yamaha SEQTRAK.
+This project is a touch-capable display and focused control surface for the Yamaha
+SEQTRAK. It should make frequently used tasks that are awkward on the hardware
+quick to see and operate. It is not intended to reproduce every device function.
+
+The main screen shows separate bar / beat / step readouts for all 11 tracks.
+Each track can use a different active pattern and step length. The current
+implementation requests documented pattern state on connection and combines
+it with MIDI Start and Clock to estimate each position. Unknown track state
+remains blank. Yamaha's Data List marks Song Position Pointer unsupported and
+does not document a direct current-bar or loop-boundary message. Pattern-switch
+phase and song/scene playback have not been hardware-verified; do not present
+the estimates as verified synchronization until focused captures confirm them.
+
+Choose controls through user workflow and hardware testing: favor high-frequency
+actions that take several steps or are hard to read on the device. Keep simple
+hardware actions on the hardware. Start with a small set of proven controls,
+then expand based on use rather than trying to implement the whole instrument.
 
 Primary goals:
 
@@ -63,7 +79,11 @@ The initial milestone is a MIDI Explorer capable of:
 * recording MIDI sessions
 * exporting recorded sessions to a human-readable file
 
-The MIDI Explorer will be used to reverse engineer and verify SEQTRAK behavior before higher-level controls are implemented.
+The MIDI Explorer remains a developer tool for reverse engineering and verifying
+SEQTRAK behavior. The touch control surface is the product's landing screen.
+Prioritize discovering and validating a source for bar / beat / step position,
+then one high-value control end to end. Keep an unavailable position visible
+until synchronization is trustworthy.
 
 ## Technology
 
@@ -806,15 +826,11 @@ Create reusable:
 
 Do this only after at least one parameter works end-to-end.
 
-### Milestone 6 - Functional screens
+### Milestone 6 - Focused control screens
 
-Add features incrementally:
-
-* mixer
-* sound/synth controls
-* effects
-* sampler
-* sequencer
+Add only controls shown through user workflow and protocol research to be
+frequent and cumbersome on the hardware. Keep the central position display
+visible while navigating focused control areas where practical.
 
 ### Milestone 7 - Additional platforms
 

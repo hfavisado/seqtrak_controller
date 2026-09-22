@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
@@ -246,27 +247,51 @@ class _Monitor extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Text(
-                  'Traffic',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              FilterChip(
-                selected: controller.showRealtimeNoise,
-                onSelected: controller.setShowRealtimeNoise,
-                label: const Text('Show clock/sensing'),
-                tooltip: 'Show F8 Timing Clock and FE Active Sensing messages',
-              ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: controller.packets.isEmpty
-                    ? null
-                    : controller.clearLog,
-                icon: const Icon(Icons.clear_all),
-                label: const Text('Clear'),
+              Text('Traffic', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  FilterChip(
+                    selected: controller.showRealtimeNoise,
+                    onSelected: controller.setShowRealtimeNoise,
+                    label: const Text('Show clock/sensing'),
+                    tooltip:
+                        'Show F8 Timing Clock and FE Active Sensing messages',
+                  ),
+                  TextButton.icon(
+                    onPressed: visiblePackets.isEmpty
+                        ? null
+                        : () async {
+                            await Clipboard.setData(
+                              ClipboardData(
+                                text: controller.formatVisibleTraffic(),
+                              ),
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Visible traffic copied'),
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copy traffic'),
+                  ),
+                  TextButton.icon(
+                    onPressed: controller.packets.isEmpty
+                        ? null
+                        : controller.clearLog,
+                    icon: const Icon(Icons.clear_all),
+                    label: const Text('Clear'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -280,14 +305,19 @@ class _Monitor extends StatelessWidget {
                         : 'Only hidden clock or active-sensing messages received',
                   ),
                 )
-              : ListView.builder(
-                  reverse: true,
-                  itemCount: visiblePackets.length,
-                  itemBuilder: (context, index) {
-                    final packet =
-                        visiblePackets[visiblePackets.length - index - 1];
-                    return _PacketTile(packet: packet, controller: controller);
-                  },
+              : SelectionArea(
+                  child: ListView.builder(
+                    reverse: true,
+                    itemCount: visiblePackets.length,
+                    itemBuilder: (context, index) {
+                      final packet =
+                          visiblePackets[visiblePackets.length - index - 1];
+                      return _PacketTile(
+                        packet: packet,
+                        controller: controller,
+                      );
+                    },
+                  ),
                 ),
         ),
       ],
@@ -303,20 +333,12 @@ class _PacketTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = packet.timestamp;
-    final timestamp =
-        '${time.hour.toString().padLeft(2, '0')}:'
-        '${time.minute.toString().padLeft(2, '0')}:'
-        '${time.second.toString().padLeft(2, '0')}.'
-        '${time.millisecond.toString().padLeft(3, '0')}';
     return ListTile(
       dense: true,
-      leading: Text(packet.direction.name.toUpperCase()),
       title: Text(
-        controller.codec.formatHex(packet.bytes),
+        controller.formatPacket(packet),
         style: const TextStyle(fontFamily: 'monospace'),
       ),
-      subtitle: Text('$timestamp  ${controller.codec.describe(packet.bytes)}'),
     );
   }
 }

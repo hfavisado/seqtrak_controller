@@ -51,9 +51,18 @@ void main() {
       expect(controller.visiblePackets.first.bytes, [0xfa]);
       expect(controller.visiblePackets.last.bytes, [0xb0, 0x4a, 0x64]);
       expect(controller.recordedPacketCount, 4);
+      expect(
+        controller.formatVisibleTraffic(),
+        contains('RX B0 4A 64  CC ch1 74 = 100'),
+      );
+      expect(controller.formatVisibleTraffic(), isNot(contains('F8')));
 
       controller.setShowRealtimeNoise(true);
       expect(controller.visiblePackets, hasLength(4));
+      expect(
+        controller.formatVisibleTraffic(),
+        contains('RX F8  Timing Clock'),
+      );
     },
   );
 }

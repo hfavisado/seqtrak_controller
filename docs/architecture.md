@@ -20,6 +20,9 @@ retained even when a message can be decoded.
 - `lib/midi/`: device and packet models, transport interface, mock transport,
   generic codec, and capture serialization
 - `lib/features/midi_explorer/`: feature controller and responsive screen
+- `lib/features/control_surface/`: touch-first landing screen with one
+  provisional position readout per track, driven by selected pattern, step
+  count, and transport clock state
 - `lib/app/`: application root and theme
 - `lib/seqtrak/`: Yamaha-documented parameter definitions and pure-Dart protocol
   encoding/decoding

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../features/midi_explorer/midi_explorer_screen.dart';
+import '../features/control_surface/control_surface_screen.dart';
 
 class SeqtrakControllerApp extends StatelessWidget {
   const SeqtrakControllerApp({super.key});
@@ -17,7 +17,7 @@ class SeqtrakControllerApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const MidiExplorerScreen(),
+      home: const ControlSurfaceScreen(),
     );
   }
 }
